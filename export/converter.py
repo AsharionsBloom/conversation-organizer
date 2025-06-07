@@ -1,4 +1,7 @@
-from utils import convert_latex_to_markdown, read_file, sanitize_title
+import json
+import os
+
+from utils import convert_latex_to_markdown, sanitize_title
 from datetime import datetime
 from pathlib import Path
 import yaml
@@ -48,7 +51,7 @@ def create_file_name_tile_and_id(title, conversation_id):
     return f"{sanitized_title} [{short_id}].md"
 
 
-def yaml_data(conversation):
+def conversation_info(conversation):
     messages = get_conversation_messages(conversation)
     conversation_id = conversation.get("id")
     create_time = datetime.fromtimestamp(conversation.get("create_time")).isoformat(timespec="seconds")
@@ -81,9 +84,9 @@ def write_conversations(conversations_data, output_dir: Path):
     created_files_info = []
     for conversation in conversations_data:
         data = conversation_info(conversation)
-        file_name = create_file_name_tile_and_id(data["original_title"], data["id"])
-
+        file_name = create_file_name_id(data["id"])
         file_path: Path = output_dir / file_name
+
         messages = get_conversation_messages(conversation)
 
         with file_path.open("w", encoding="utf-8") as file:
