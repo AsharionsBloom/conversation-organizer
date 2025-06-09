@@ -1,5 +1,5 @@
 from pathlib import Path
-from converter import write_conversations
+from converter import update_all_files
 import argparse
 import json
 
@@ -28,9 +28,7 @@ def main():
         return
     with args.input_file.open("r", encoding="utf-8") as file:
         conversations_data = json.load(file)
-    created_files_info = write_conversations(conversations_data, args.output_dir)
-    for info in created_files_info:
-        print(f"Created file: {info['file']}")
+    update_all_files(conversations_data, args.output_dir)
 
 
 if __name__ == "__main__":

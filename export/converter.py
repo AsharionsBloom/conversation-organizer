@@ -10,7 +10,7 @@ import yaml
 def extract_message_parts(message):
     content = message.get("content")
     if content and content.get("content_type") == "text":
-        return [convert_latex_to_markdown(part) for part in content.get("parts", [])]
+        return [part for part in content.get("parts", [])]
     return []
 
 
@@ -74,29 +74,58 @@ def conversation_info(conversation):
     return data
 
 
-def write_conversations(conversations_data, output_dir: Path):
-    """
-    Converts the conversations in the ChatGPT exported json file to Markdown files with a YAML frontmatter
-    """
+def get_file_metadata(file):
+    with open(file, 'r') as f:
+        lines = f.readlines()
+    if lines[0].strip() == '---':
+        # Find where the front matter ends
+        end = next(i for i, line in enumerate(lines[1:], 1) if line.strip() == '---')
+        front_matter = ''.join(lines[1:end])
+        metadata = yaml.safe_load(front_matter)
+    else:
+        print("No YAML frontmatter found")
+        metadata = {}
+    return metadata
+
+
+def write_to_file(metadata: dict, messages: list, file_path: Path):
+    with file_path.open("w", encoding="utf-8") as file:
+        file.write("---\n")
+        yaml.dump(metadata, file, sort_keys=False)
+        file.write("---\n")
+        for message in messages:
+            file.write(f"**{message['author']}**\n\n")
+            file.write(f"{message['text']}\n\n")
+        print(f"File created: {file_path}")
+
+
+def update_file(conversation, output_dir: Path):
     # Ensure the output directory exists
     output_dir.mkdir(parents=True, exist_ok=True)
+    data = conversation_info(conversation)
+    file_name = create_file_name_id(data["id"])
+    file_path: Path = output_dir / file_name
+    messages = get_conversation_messages(conversation)
+    if os.path.exists(file_path):
+        metadata = get_file_metadata(file_path)
+        new_update_time = datetime.fromisoformat(data['update_time'])
+        if type(metadata['update_time']) == str:
+            old_update_time = datetime.fromisoformat(metadata['update_time'])
+        else:
+            old_update_time = metadata['update_time']
+        if new_update_time > old_update_time:
+            print("update")
+            # If a file in marked delete but on the web-end, it got modified,
+            # then we add a delete_time that was the old update_time
+            if "delete" in metadata:
+                if metadata["delete"]:
+                    metadata["delete_time"] = metadata["update_time"]
+            metadata.update(data)
+            write_to_file(metadata, messages, file_path)
+    else:
+        write_to_file(data, messages, file_path)
 
-    created_files_info = []
+
+def update_all_files(conversations_data, output_dir: Path):
     for conversation in conversations_data:
-        data = conversation_info(conversation)
-        file_name = create_file_name_id(data["id"])
-        file_path: Path = output_dir / file_name
-
-        messages = get_conversation_messages(conversation)
-
-        with file_path.open("w", encoding="utf-8") as file:
-            file.write("---\n")
-            yaml.dump(data, file, sort_keys=False)
-            file.write("---\n")
-            for message in messages:
-                file.write(f"**{message['author']}**\n\n")
-                file.write(f"{message['text']}\n\n")
-
-        created_files_info.append({"file": str(file_path)})
-
-    return created_files_info
+        update_file(conversation, output_dir)
