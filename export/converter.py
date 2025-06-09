@@ -133,6 +133,7 @@ def write_to_file(metadata: dict, messages: list, file_path: Path):
         for message in messages:
             file.write(f"**{message['author']}**\n\n")
             file.write(f"{message['text']}\n\n")
+            file.write("\n==========\n\n")
         # print(f"File created: {file_path}")
 
 
