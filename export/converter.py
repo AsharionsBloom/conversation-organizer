@@ -8,16 +8,52 @@ import yaml
 
 
 def extract_message_parts(message):
+    """
+    Extracts the main text content from a message.
+
+    Special handling is included for system tool messages:
+    - canmore.update_textdoc: returns the 'replacement' field (code update)
+    - canmore.create_textdoc: returns the 'content' field (full new doc)
+
+    If decoding fails or the message is normal, falls back to raw text.
+    """
     content = message.get("content")
-    if content and content.get("content_type") == "text":
-        return [part for part in content.get("parts", [])]
-    return []
+    if not content or content.get("content_type") != "text":
+        return []
+
+    parts = content.get("parts", [])
+    if not parts:
+        return []
+
+    text = parts[0]
+    recipient = message.get("recipient")
+
+    if recipient == "canmore.create_textdoc":
+        try:
+            doc = json.loads(text)
+            lang = doc.get("type", "").split("/")[-1]
+            content = doc.get('content', '')
+            return [f"```{lang}\n{content}\n```"]
+        except (json.JSONDecodeError, TypeError):
+            pass
+    if recipient == "canmore.update_textdoc":
+        try:
+            parsed = json.loads(text)
+            updates = parsed.get("updates", [])
+            if updates and "replacement" in updates[0]:
+                content = updates[0]["replacement"]
+                return [f"```\n{content}\n```"]
+        except json.JSONDecodeError:
+            pass
+    return [text]
 
 
 def get_author_name(message):
     author = message.get("author", {}).get("role", "")
     if author == "assistant":
-        return "ChatGPT"
+        meta = message.get("metadata", {})
+        model_slug = meta.get("model_slug")
+        return model_slug
     elif author == "system":
         return "Custom user info"
     return author
@@ -33,10 +69,11 @@ def get_conversation_messages(conversation):
         if message:
             parts = extract_message_parts(message)
             author = get_author_name(message)
-            # Exclude system messages unless explicitly marked
-            if parts and len(parts[0]) > 0:
-                if author != "system" or message.get("metadata", {}).get("is_user_system_message"):
-                    messages.append({"author": author, "text": parts[0]})
+            if author != "tool":
+                # Exclude system messages unless explicitly marked
+                if parts and len(parts[0]) > 0:
+                    if author != "system" or message.get("metadata", {}).get("is_user_system_message"):
+                        messages.append({"author": author, "text": parts[0]})
         current_node = node.get("parent") if node else None
     return messages[::-1]
 
@@ -96,7 +133,7 @@ def write_to_file(metadata: dict, messages: list, file_path: Path):
         for message in messages:
             file.write(f"**{message['author']}**\n\n")
             file.write(f"{message['text']}\n\n")
-        print(f"File created: {file_path}")
+        # print(f"File created: {file_path}")
 
 
 def update_file(conversation, output_dir: Path):
