@@ -3,13 +3,45 @@ import string
 import unicodedata
 
 
-def convert_latex_to_markdown(text):
+def convert_latex_delimiters_excluding_backticks(text):
     """
-    Convert LaTeX notation from \( ... \) to $...$ and \[ ... \] to $$ ... $$.
+    Converts LaTeX inline and display math delimiters, but excludes
+    any matches that are found within backticks (`...`).
     """
-    text = re.sub(r'\\\(\s*(.*?)\s*\\\)', r'$\1$', text)  # Inline math
-    text = re.sub(r'\\\[\s*(.*?)\s*\\\]', r'$$\n\1\n$$', text, flags=re.DOTALL)  # Block math
-    return text
+
+    # Regex patterns for math delimiters
+    inline_math_pattern = r'\\\(\s*(.*?)\s*\\\)'
+    display_math_pattern = r'\\\[\s*(.*?)\s*\\\]'
+
+    # Combined pattern:
+    # 1. `([^`]*?)`   : Matches any content within backticks (captures the content).
+    #                    The `[^`]*?` ensures it's non-greedy and doesn't cross backticks.
+    # 2. |             : OR
+    # 3. (inline_math_pattern) : Matches the inline math pattern (captures the whole pattern).
+    # 4. |             : OR
+    # 5. (display_math_pattern): Matches the display math pattern (captures the whole pattern).
+    # Using re.DOTALL allows `.` to match newlines, important for multiline display math.
+    combined_pattern = rf"`([^`]*?)`|({inline_math_pattern})|({display_math_pattern})"
+
+    def replacer(match):
+        # Group 1: Content inside backticks
+        if match.group(1) is not None:
+            return f"`{match.group(1)}`"  # Return the whole backtick block unchanged
+
+        # Group 2: Full inline math match (e.g., '\(x^2\)')
+        # Group 3: Content inside inline math (e.g., 'x^2')
+        elif match.group(2) is not None:
+            return f"${match.group(3)}$"  # Convert inline math
+
+        # Group 4: Full display math match (e.g., '\[E=mc^2\]')
+        # Group 5: Content inside display math (e.g., 'E=mc^2')
+        elif match.group(4) is not None:
+            return f"$${match.group(5)}$$"  # Convert display math
+
+        # This case shouldn't be reached if the patterns are mutually exclusive and comprehensive
+        return match.group(0)  # Fallback: return the full match unchanged
+
+    return re.sub(combined_pattern, replacer, text, flags=re.DOTALL)
 
 
 def sanitize_title(title):

@@ -1,7 +1,7 @@
 import json
 import os
 
-from utils import convert_latex_to_markdown, sanitize_title, clean_text
+from utils import convert_latex_delimiters_excluding_backticks, sanitize_title, clean_text
 from datetime import datetime
 from pathlib import Path
 import yaml
@@ -25,7 +25,7 @@ def extract_message_parts(message):
     if not parts:
         return []
 
-    text = parts[0]
+    text = convert_latex_delimiters_excluding_backticks(parts[0])
     recipient = message.get("recipient")
 
     if recipient == "canmore.create_textdoc":
