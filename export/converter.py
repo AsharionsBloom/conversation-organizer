@@ -1,7 +1,7 @@
 import json
 import os
 
-from utils import convert_latex_to_markdown, sanitize_title
+from utils import convert_latex_to_markdown, sanitize_title, clean_text
 from datetime import datetime
 from pathlib import Path
 import yaml
@@ -69,13 +69,27 @@ def get_conversation_messages(conversation):
         if message:
             parts = extract_message_parts(message)
             author = get_author_name(message)
+            urls = extract_search_result_urls(message)
             if author != "tool":
                 # Exclude system messages unless explicitly marked
                 if parts and len(parts[0]) > 0:
                     if author != "system" or message.get("metadata", {}).get("is_user_system_message"):
-                        messages.append({"author": author, "text": parts[0]})
+                        messages.append({"author": author, "text": parts[0], "urls": urls})
         current_node = node.get("parent") if node else None
     return messages[::-1]
+
+
+def extract_search_result_urls(message):
+    urls = []
+    real_author = message.get("author", {}).get("metadata", {}).get("real_author")
+    if real_author == "tool:web":
+        for group in message.get("metadata", {}).get("search_result_groups", []):
+            for entry in group.get("entries", []):
+                url = entry.get("url", [])
+                if url:
+                    ref_index = entry.get("ref_id").get("ref_index")
+                    urls.append((ref_index, url))
+    return urls
 
 
 def create_file_name_id(conversation_id):
@@ -125,16 +139,24 @@ def get_file_metadata(file):
     return metadata
 
 
-def write_to_file(metadata: dict, messages: list, file_path: Path):
+def write_to_file(metadata: dict, messages, file_path: Path):
     with file_path.open("w", encoding="utf-8") as file:
         file.write("---\n")
         yaml.dump(metadata, file, sort_keys=False)
         file.write("---\n")
         for message in messages:
             file.write(f"**{message['author']}**\n\n")
-            file.write(f"{message['text']}\n\n")
+            urls = message["urls"]
+            if urls:
+                file.write(f"{clean_text(message['text'])}\n\n")
+                file.write("Reference:\n")
+                urls.sort(key=lambda t: t[0])
+                for index, item in urls:
+                    file.write(f"{index}. {item}\n")
+            else:
+                file.write(f"{message['text']}\n\n")
             file.write("\n==========\n\n")
-        # print(f"File created: {file_path}")
+        print(f"File created: {file_path}")
 
 
 def update_file(conversation, output_dir: Path):

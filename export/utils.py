@@ -1,4 +1,5 @@
 import re
+import string
 import unicodedata
 
 
@@ -29,3 +30,8 @@ def read_file(file):
     with open(file, "r") as f:
         content = set(line.strip() for line in f if line.strip())
     return content
+
+
+def clean_text(text):
+    cleaned_text = "".join(char for char in text if char in string.printable)
+    return re.sub(r"citeturn0search(\d+)", r"(See ref \1)", cleaned_text)
