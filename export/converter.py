@@ -144,6 +144,9 @@ def write_to_file(metadata: dict, messages, file_path: Path):
         file.write("---\n")
         yaml.dump(metadata, file, sort_keys=False)
         file.write("---\n")
+        conversation_url = "https://chatgpt.com/c/" + metadata["id"]
+        file.write(f"[Conversation url]({conversation_url})\n")
+        file.write("\n==========\n\n")
         for message in messages:
             file.write(f"**{message['author']}**\n\n")
             urls = message["urls"]
@@ -152,7 +155,7 @@ def write_to_file(metadata: dict, messages, file_path: Path):
                 file.write("Reference:\n")
                 urls.sort(key=lambda t: t[0])
                 for index, item in urls:
-                    file.write(f"{index}. {item}\n")
+                    file.write(f"{index}) {item}\n")
             else:
                 file.write(f"{message['text']}\n\n")
             file.write("\n==========\n\n")
