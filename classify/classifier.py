@@ -1,35 +1,45 @@
 from pathlib import Path
-from utils import extract_json_from_md, add_metadata_to_md
+import yaml
+from llm_models import LLM
+from common.utils import parse_file, extract_json
 
 
-def process_conversation(file, llm, tags_with_descriptions):
-    with file.open("r", encoding="utf-8") as f:
-        content = f.read()
+def llm_classifier(file: Path, llm: LLM, tags_with_descriptions: dict) -> None:
+    file_content = parse_file(file)
+    metadata = file_content["metadata"]
+    content = file_content["content"]
+    # Files marked with delete are not processed by the LLM
+    if not metadata["delete"]:
+        prompt = (
+            "Read this text: "
+            f"\n===\n"
+            f"\n{content}\n"
+            f"\n===\n"
+            "Return ONLY in the format of a json with two fields, like this: "
+            '{"title":  <you think of a good title for the text>,'
+            '"tags":'
+            f"<choose (be very conservative) the most fitting tags from here: \n{tags_with_descriptions.keys()}>"
+        )
+        # Tries a finite amount of times at most with the prompt
+        number_of_trials = 10
+        for _ in range(number_of_trials):
+            response = llm.response_from(prompt)
+            print(f"response: {response}")
+            if response is not None:
+                data = extract_json(response)
+                print(data)
+                if "title" in data and "tags" in data:
+                    metadata.update(data)
+                    with file.open("w", encoding="utf-8") as file:
+                        file.write("---\n")
+                        yaml.dump(metadata, file, sort_keys=False)
+                        file.write("---\n")
+                        file.write(f"# {data['title']}\n\n")
+                        file.write(content)
+                    return None
+        print(f"No valid return from the LLM after {number_of_trials} calls.")
 
-    conversation_text = content.split('---')[-1].strip()
-    prompt = (
-        "Read the conversation below. "
-        f"Keep in mind this dictionary where keys are tags and values are their description: \n{tags_with_descriptions}\n"
-        f"Now, think of a good title and choose the most fitting tags. "
-        "Feel free to add a few more tags if appropriate, but not too redundant or too specific (be conservative). "
-        "If the tag has several words, make sure to connect them with a hyphen. "
-        "Return in the format of a json with two fields 'title' and 'tags'. "
-        f"Conversation: \n{conversation_text}\n"
-    )
-    data = extract_json_from_md(llm.response_from(prompt))
-    if data is None:
-        pass
-    else:
-        title = data["title"]
-        tags = data["tags"]
-        with file.open("w", encoding="utf-8") as f:
-            f.write(add_metadata_to_md(content, title, tags))
 
-        print(f"The title is '{title}' and tags '{tags}'.")
-
-
-def process_all_files(folder_path: Path, llm, tags_with_descriptions):
+def process_all_files(folder_path: Path, llm: LLM, tags_with_descriptions: dict) -> None:
     for file in folder_path.glob("*.md"):
-        process_conversation(file, llm, tags_with_descriptions)
-
-
+        llm_classifier(file, llm, tags_with_descriptions)

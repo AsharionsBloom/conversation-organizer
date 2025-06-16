@@ -1,7 +1,20 @@
+import json
 import os
 import re
 import yaml
 from pathlib import Path
+
+
+def extract_json(text: str) -> dict:
+    # Extract JSON code block using regex
+    match = re.search(r'```json\s*(\{.*?\})\s*```', text, re.DOTALL)
+    if match:
+        json_str = match.group(1)
+        data = json.loads(json_str)
+        return data
+    else:
+        print("No valid JSON found.")
+        return {}
 
 
 def parse_file(file: Path) -> dict:
