@@ -1,13 +1,12 @@
 import json
-import os
-
+from common.utils import find_files_by_id, parse_file
 from utils import convert_latex_delimiters_excluding_backticks, sanitize_title, clean_text
 from datetime import datetime
 from pathlib import Path
 import yaml
 
 
-def extract_message_parts(message):
+def extract_message_parts(message: dict) -> list:
     """
     Extracts the main text content from a message.
 
@@ -48,7 +47,7 @@ def extract_message_parts(message):
     return [text]
 
 
-def get_author_name(message):
+def get_author_name(message: dict) -> str:
     author = message.get("author", {}).get("role", "")
     if author == "assistant":
         meta = message.get("metadata", {})
@@ -59,7 +58,7 @@ def get_author_name(message):
     return author
 
 
-def get_conversation_messages(conversation):
+def get_conversation_messages(conversation: dict) -> list:
     messages = []
     current_node = conversation.get("current_node")
     mapping = conversation.get("mapping", {})
@@ -79,7 +78,7 @@ def get_conversation_messages(conversation):
     return messages[::-1]
 
 
-def extract_search_result_urls(message):
+def extract_search_result_urls(message: dict) -> list:
     urls = []
     real_author = message.get("author", {}).get("metadata", {}).get("real_author")
     if real_author == "tool:web":
@@ -92,17 +91,16 @@ def extract_search_result_urls(message):
     return urls
 
 
-def create_file_name_id(conversation_id):
+def create_file_name_id(conversation_id: str) -> str:
     return f"{conversation_id}.md"
 
 
-def create_file_name_tile_and_id(title, conversation_id):
+def create_file_name_tile_and_id(title: str, conversation_id: str) -> str:
     sanitized_title = sanitize_title(title)
-    short_id = conversation_id[:4]
-    return f"{sanitized_title} [{short_id}].md"
+    return f"{sanitized_title}[{conversation_id}].md"
 
 
-def conversation_info(conversation):
+def conversation_info(conversation: dict) -> dict:
     messages = get_conversation_messages(conversation)
     conversation_id = conversation.get("id")
     create_time = datetime.fromtimestamp(conversation.get("create_time")).isoformat(timespec="seconds")
@@ -125,21 +123,7 @@ def conversation_info(conversation):
     return data
 
 
-def get_file_metadata(file):
-    with open(file, 'r') as f:
-        lines = f.readlines()
-    if lines[0].strip() == '---':
-        # Find where the front matter ends
-        end = next(i for i, line in enumerate(lines[1:], 1) if line.strip() == '---')
-        front_matter = ''.join(lines[1:end])
-        metadata = yaml.safe_load(front_matter)
-    else:
-        print("No YAML frontmatter found")
-        metadata = {}
-    return metadata
-
-
-def write_to_file(metadata: dict, messages, file_path: Path):
+def write_to_file(metadata: dict, messages: list, file_path: Path) -> None:
     with file_path.open("w", encoding="utf-8") as file:
         file.write("---\n")
         yaml.dump(metadata, file, sort_keys=False)
@@ -162,33 +146,36 @@ def write_to_file(metadata: dict, messages, file_path: Path):
         print(f"File created: {file_path}")
 
 
-def update_file(conversation, output_dir: Path):
+def update_file(conversation: dict, output_dir: Path) -> None:
     # Ensure the output directory exists
     output_dir.mkdir(parents=True, exist_ok=True)
     data = conversation_info(conversation)
-    file_name = create_file_name_id(data["id"])
-    file_path: Path = output_dir / file_name
+    existing_file = find_files_by_id(output_dir, data["id"])
     messages = get_conversation_messages(conversation)
-    if os.path.exists(file_path):
-        metadata = get_file_metadata(file_path)
+    if existing_file is not None:
+        metadata = parse_file(existing_file)["metadata"]
         new_update_time = datetime.fromisoformat(data['update_time'])
         if type(metadata['update_time']) == str:
             old_update_time = datetime.fromisoformat(metadata['update_time'])
         else:
             old_update_time = metadata['update_time']
         if new_update_time > old_update_time:
-            print("update")
-            # If a file in marked delete but on the web-end, it got modified,
-            # then we add a delete_time that was the old update_time
+            # If a file is marked delete, but it got modified on the web-end,
+            # then we add a delete_time that is the old update_time
             if "delete" in metadata:
                 if metadata["delete"]:
                     metadata["delete_time"] = metadata["update_time"]
+            else:
+                metadata["delete"] = False
             metadata.update(data)
-            write_to_file(metadata, messages, file_path)
+            write_to_file(metadata, messages, existing_file)
     else:
+        file_name = create_file_name_tile_and_id(data["original_title"], data["id"])
+        file_path: Path = output_dir / file_name
+        data["delete"] = False
         write_to_file(data, messages, file_path)
 
 
-def update_all_files(conversations_data, output_dir: Path):
-    for conversation in conversations_data:
+def update_all_files(conversations: dict, output_dir: Path) -> None:
+    for conversation in conversations:
         update_file(conversation, output_dir)
