@@ -8,10 +8,16 @@ Each file includes YAML front matter with metadata and conversation statistics.
 **Conversion highlights:**
 
 * Splits each conversation into a standalone Markdown file
+
+* Supports updating existing notes when a new `conversations.json` export is downloaded and converted
+  *(Tip: use Git to track and review changes over time)*
+
+
 * Supports rendering of:
   * Search tool results with URLs
   * Canvas code
   * LaTeX blocks for display in Obsidian
+
 
 
 > ⚠️ Currently, images and audio content in conversations are **not supported** by the converter.
