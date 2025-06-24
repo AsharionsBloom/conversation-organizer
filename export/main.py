@@ -1,18 +1,17 @@
 from pathlib import Path
-from converter import update_all_files
+from export.converter import update_all_files
 import argparse
 import json
 
 """
-This script processes conversation config from a JSON file, extracts messages,
-and writes them to markdown files with a YAML front matter. 
+This script processes ChatGPT conversation.json file to markdown files with a YAML front matter. 
 
 The script is designed to be run as a command-line interface (CLI), allowing the user to
 specify the input JSON file and output directory.
 
-Usage:
+Run at the root folder:
     source venv/bin/activate    
-    python script.py /path/to/conversations.json /path/to/output_directory 
+    python -m export.main /path/to/conversations.json /path/to/output_directory 
 
 """
 

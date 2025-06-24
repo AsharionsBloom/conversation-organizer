@@ -1,22 +1,49 @@
 # ChatGPT Conversation Organizer
 
-This is a work-in-progress project. 
-It converts exported ChatGPT conversations into clean, searchable Markdown notes—perfect for use with tools like **Obsidian**. 
-So far, it includes:
+This tool converts your official ChatGPT `conversations.json` export into individual Markdown (`.md`) files suitable for use with [Obsidian](https://obsidian.md/).
+Each file includes YAML front matter with metadata and conversation statistics.
 
-### 1. `converter.py`
+### ✨ Features
 
-Converts the official `conversations.json` export from ChatGPT into individual `.md` files with:
+**Conversion highlights:**
 
-* YAML front matter with conversation metadata and key stats
-* Markdown formatting for search results and canvas inserts.
-* LaTeX math mode conversion (`\(...\)` → `$...$`, `\[...\]` → `$$...$$`)
+* Splits each conversation into a standalone Markdown file
+* Supports rendering of:
+  * Search tool results with URLs
+  * Canvas code
+  * LaTeX blocks for display in Obsidian
 
 
-### 2. `classifier.py`
+> ⚠️ Currently, images and audio content in conversations are **not supported** by the converter.
 
-Uses an LLM (e.g., Gemini or offline models via Ollama) to enhance each Markdown file by:
 
-* Suggesting a clearer or more descriptive title
-* Choosing from user-defined tags and generating new tags 
-* Updating the YAML front matter accordingly
+
+
+**Classification module (optional):**
+
+* Uses an LLM (e.g., Google Gemini or Ollama-backed models) to:
+
+  * Suggest a more descriptive title
+  * Auto-assign user-defined tags
+
+Note: Configuration files are not tracked in version control.
+
+   * Store your model API info and keys in config/gemini.json or config/ollama.json.
+
+   * User tags with descriptions go in config/user_tags.json.
+
+---
+
+### 🔧 Installation
+
+1. Clone or download this repository.
+2. From the project root, run:
+
+   ```bash
+   pip install -e .
+   ```
+3. Run the converter using:
+   ```bash
+   python -m export.main /path/to/conversation.json /path/to/folder/
+   ```
+

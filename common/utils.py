@@ -5,6 +5,15 @@ import yaml
 from pathlib import Path
 
 
+def update_yaml_field(metadata: dict, field: str, value: list) -> dict:
+    existing_value = metadata.get(field, [])
+    if not isinstance(existing_value, list):
+        existing_value = [existing_value]
+    combined = list(dict.fromkeys(existing_value + value))  # remove duplicates, preserve order
+    metadata[field] = combined
+    return metadata
+
+
 def extract_json(text: str) -> dict:
     # Extract JSON code block using regex
     match = re.search(r'```json\s*(\{.*?\})\s*```', text, re.DOTALL)

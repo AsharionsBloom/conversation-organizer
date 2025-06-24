@@ -2,8 +2,8 @@ import os
 import json
 from pathlib import Path
 
-from classifier import process_all_files
-from llm_models import Gemini
+from classify.llm_classifier import classify_all_files
+from classify.llm_models import Gemini
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
         api_url = config["api_url"]
         return Gemini(api_key, api_url)
 
-    process_all_files(args.folder_path, gemini(), tag_dict)
+    classify_all_files(args.folder_path, gemini(), tag_dict)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 import json
 from common.utils import find_files_by_id, parse_file
-from utils import convert_latex_delimiters_excluding_backticks, sanitize_title, clean_text
+from export.utils import convert_latex_delimiters_excluding_backticks, sanitize_title, clean_text
 from datetime import datetime
 from pathlib import Path
 import yaml
@@ -11,8 +11,8 @@ def extract_message_parts(message: dict) -> list:
     Extracts the main text content from a message.
 
     Special handling is included for system tool messages:
-    - canmore.update_textdoc: returns the 'replacement' field (code update)
     - canmore.create_textdoc: returns the 'content' field (full new doc)
+    - canmore.update_textdoc: returns the 'replacement' field (code update)
 
     If decoding fails or the message is normal, falls back to raw text.
     """
@@ -86,8 +86,10 @@ def extract_search_result_urls(message: dict) -> list:
             for entry in group.get("entries", []):
                 url = entry.get("url", [])
                 if url:
-                    ref_index = entry.get("ref_id").get("ref_index")
-                    urls.append((ref_index, url))
+                    ref_id = entry.get("ref_id", [])
+                    if ref_id:
+                        ref_index = ref_id.get("ref_index")
+                        urls.append((ref_index, url))
     return urls
 
 
