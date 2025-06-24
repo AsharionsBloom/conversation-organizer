@@ -28,9 +28,9 @@ Each file includes YAML front matter with metadata and conversation statistics.
 
 Note: Configuration files are not tracked in version control.
 
-   * Store your model API info and keys in config/gemini.json or config/ollama.json.
+   * Store your model API info and keys in `config/gemini.json` or `config/ollama.json`.
 
-   * User tags with descriptions go in config/user_tags.json.
+   * User tags with descriptions go in `config/user_tags.json`.
 
 ---
 
