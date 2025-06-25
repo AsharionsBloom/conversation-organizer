@@ -5,25 +5,29 @@ import yaml
 from pathlib import Path
 
 
-def update_yaml_field(metadata: dict, field: str, value: list) -> dict:
+def update_yaml_list(metadata: dict, field: str, words: list) -> dict:
     existing_value = metadata.get(field, [])
     if not isinstance(existing_value, list):
         existing_value = [existing_value]
-    combined = list(dict.fromkeys(existing_value + value))  # remove duplicates, preserve order
-    metadata[field] = combined
+    if isinstance(words, list):
+        connected_words = ["-".join(s.strip().split()) if " " in s else s for s in words]
+        combined = list(dict.fromkeys(existing_value + connected_words))  # remove duplicates, preserve order
+        metadata[field] = combined
     return metadata
 
 
 def extract_json(text: str) -> dict:
-    # Extract JSON code block using regex
     match = re.search(r'```json\s*(\{.*?\})\s*```', text, re.DOTALL)
     if match:
-        json_str = match.group(1)
-        data = json.loads(json_str)
-        return data
+        json_str = match.group(1).strip()
+        try:
+            data = json.loads(json_str)
+            return data
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error: {e}")
     else:
-        print("No valid JSON found.")
-        return {}
+        print("No valid JSON block found.")
+    return {}
 
 
 def parse_file(file: Path) -> dict:

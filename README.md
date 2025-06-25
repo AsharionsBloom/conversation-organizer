@@ -27,10 +27,7 @@ Each file includes YAML front matter with metadata and conversation statistics.
 
 **Classification module (optional):**
 
-* Uses an LLM (e.g., Google Gemini or Ollama-backed models) to:
-
-  * Suggest a more descriptive title
-  * Auto-assign user-defined tags
+* Uses an LLM (e.g., Google Gemini or Ollama-backed models) to auto-assign user-defined tags
 
 Note: Configuration files are not tracked in version control.
 
