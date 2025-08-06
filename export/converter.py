@@ -141,7 +141,7 @@ def write_to_file(metadata: dict, messages: list, file_path: Path) -> None:
                 file.write("Reference:\n")
                 urls.sort(key=lambda t: t[0])
                 for index, item in urls:
-                    file.write(f"{index}) {item}\n")
+                    file.write(f"({index}) {item}\n")
             else:
                 file.write(f"{message['text']}\n\n")
             file.write("\n====================\n\n")

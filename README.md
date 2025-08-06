@@ -12,6 +12,7 @@ where plugins like Dataview and Smart Connections offer better organization and 
 * Converts each conversation into a standalone Markdown file, with YAML front matter containing metadata and conversation statistics
 * Re-converting a newer `conversations.json` export updates existing notes in-place—no duplication
 * Automatically includes a link to the original ChatGPT conversation
+* Shows the model name
 * Renders:
 
   * Search tool results with URLs
@@ -20,7 +21,7 @@ where plugins like Dataview and Smart Connections offer better organization and 
 
 *Tip: Use Git to track and review local changes over time.*
 
-> ⚠️ Currently, images, videos and audio content in conversations are **not supported**.
+> ⚠️ Currently, deep research links, images, audio and video content in conversations are **not supported**.
 
 ---
 
