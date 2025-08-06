@@ -20,7 +20,7 @@ where plugins like Dataview and Smart Connections offer better organization and 
 
 *Tip: Use Git to track and review local changes over time.*
 
-> ⚠️ Currently, images and audio content in conversations are **not supported**.
+> ⚠️ Currently, images, videos and audio content in conversations are **not supported**.
 
 ---
 
@@ -50,3 +50,7 @@ where plugins like Dataview and Smart Connections offer better organization and 
    ```bash
    python -m export.main /path/to/conversations.json /path/to/output_folder/
    ```
+
+---
+
+**Contributions and collaborators are welcome!**

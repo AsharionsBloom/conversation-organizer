@@ -132,9 +132,9 @@ def write_to_file(metadata: dict, messages: list, file_path: Path) -> None:
         file.write("---\n")
         conversation_url = "https://chatgpt.com/c/" + metadata["id"]
         file.write(f"[Conversation url]({conversation_url})\n")
-        file.write("\n==========\n\n")
+        file.write("\n====================\n\n")
         for message in messages:
-            file.write(f"**{message['author']}**\n\n")
+            file.write(f"# **{message['author']}**\n\n")
             urls = message["urls"]
             if urls:
                 file.write(f"{clean_text(message['text'])}\n\n")
@@ -144,7 +144,7 @@ def write_to_file(metadata: dict, messages: list, file_path: Path) -> None:
                     file.write(f"{index}) {item}\n")
             else:
                 file.write(f"{message['text']}\n\n")
-            file.write("\n==========\n\n")
+            file.write("\n====================\n\n")
         print(f"File created: {file_path}")
 
 
